@@ -26,12 +26,12 @@ print(userAgent)
 options.add_argument(f'user-agent={userAgent}') #user agent para reducir el riesgo de bloqueo de la página
 
 
-DRIVER_PATH = 'C:/D/chromedriver101.exe' 
+DRIVER_PATH = 'C:/chromedriver.exe' 
 driver = webdriver.Chrome(chrome_options=options, executable_path=DRIVER_PATH) #Options para el user agent
 my_page = 'https://www.facilito.gob.pe/facilito/pages/facilito/buscadorAGranelGLP.jsp'
 driver.get(my_page)
 sleep(randint(5,10))
-driver.find_element_by_xpath("/html/body/div/div[3]/div[1]/a[14]").click() ###FULLLL XPATH
+driver.find_element_by_xpath("/html/body/main/section[2]/div[1]/div/map/area[14]").click() ###FULLLL XPATH
 
 #####FUNCIONES############
 #1.Función que extrae todas las opciones por el nombre del nodo ('distrito', 'provincia', 'departamentoAux', 'producto...)
@@ -66,38 +66,51 @@ lima=['ANCON', 'ATE', 'BARRANCO', 'BREÑA', 'CARABAYLLO', 'CHACLACAYO',
 
 
 
-
-
-
-
 general={'Titles':['Distrito', 'Establecimiento', 'Dirección', 'Teléfono', 'Precio de Venta\n(Soles por galón)', 'Unidad de Medida']}
 general=pd.DataFrame(general).transpose()
 
-before_XPath = '//*[@id="contenido_listado"]/div[5]/div[3]/table/tbody/tr['
+before_XPath = '//*[@id="tblPreciosAGranelGlp"]/tbody/tr['
 aftertd_XPath = "]/td["
 aftertr_XPath = "]"
-for x in range(1,18):
-        rows2 = len(driver.find_elements_by_xpath('//*[@id="contenido_listado"]/div[5]/div[3]/table/tbody/tr')) # Contará una lista de cada tr incluyendo el título 
-        columns2 = len(driver.find_elements_by_xpath('//*[@id="contenido_listado"]/div[5]/div[3]/table/tbody/tr[2]/td'))
+
+#//*[@id="tblPreciosAGranelGlp"]/tbody/tr[1]/th
+Select(driver.find_element_by_xpath('//*[@id="tblPreciosAGranelGlp_length"]/label/select')).select_by_visible_text('50')
+sleep(randint(1,2))
+for x in range(2,11): ##ELEGIR 50
+        rows2 = len(driver.find_elements_by_xpath('/html/body/form/main/section[2]/div/div[2]/div/div/table/tbody/tr')) # Contará una lista de cada tr incluyendo el título 
+        columns2 = len(driver.find_elements_by_xpath('/html/body/form/main/section[2]/div/div[2]/div/div/table/tbody/tr[2]/td'))
         titles={'Titles':['Distrito', 'Establecimiento', 'Dirección', 'Teléfono', 'Precio de Venta\n(Soles por galón)', 'Unidad de Medida']}
         d2={}
-        for t_row in range(2, (rows2 + 1)): #La primera fila es el título #rows +1, pues range no toma al último valor
+        for t_row in range(1, (rows2 + 1)): #La primera fila es el título #rows +1, pues range no toma al último valor
             fila2='Linea{}'.format(t_row) ##Nuevamente cuento las filas
             d2[fila2]=[]
+            Col1=driver.find_element_by_xpath('//*[@id="tblPreciosAGranelGlp"]/tbody/tr['+str(t_row)+ "]/th").text
+            d2[fila2].append(Col1)
             for t_column in range(1, (columns2 + 1)):
                 FinalXPath = before_XPath + str(t_row) + aftertd_XPath + str(t_column) + aftertr_XPath
                 cell_text = driver.find_element_by_xpath(FinalXPath).text
                 d2[fila2].append(cell_text) #Entramos a la lista (values) del diccionario
         titles.update(d2) 
-        driver.find_element_by_xpath('//*[@id="contenido_listado"]/div[5]/div[3]/div/a[2]').click()
-        sleep(randint(5,10))
+        print(titles)
+        try:
+           driver.find_element_by_xpath("//*[@id='tblPreciosAGranelGlp_paginate']/span/*[contains(text(),'"+str(x)+"')]").click()
+           print(x)
+        except:
+           print("No hay fila"+str(x))
+        sleep(randint(1,2))
                    
         df= pd.DataFrame(data=titles).transpose()
         df['Combustible']='GLGranel'
         df['Provincia']='Lima'
         general=pd.concat([general, df])
 
-general.to_excel('C:\\Trabajo BCRP\\Scripts\\GLP Granel\\Data\\dfGLGranel_Lima17-05.xlsx', index = True)
+
+general.to_excel('D:\\Git-Hub\\facilito\\Trabajo BCRP\\Scripts\\GLP Granel\\Data\\dfGLGranel_Lima19-08.xlsx', index = True)
+
+
+
+
+
 
 
 
